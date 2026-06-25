@@ -17,7 +17,7 @@ public class FindFolderWindow : EditorWindow
 
     #region Window
 
-    [MenuItem("Tools/Find Folder")]
+    [MenuItem("Tools/ActionFit/Find Folder", false, 20)]
     public static void ShowWindow()
     {
         var window = GetWindow<FindFolderWindow>("Find Folder");
