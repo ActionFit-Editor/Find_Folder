@@ -1,8 +1,8 @@
 {
   "name": "com.actionfit.findfolder",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "displayName": "Find Folder",
-  "description": "자주 쓰는 프로젝트 폴더를 그룹/중첩으로 등록해 버튼 한 번으로 Project 창에서 바로가기 하는 에디터 윈도우. 설정은 소비자 프로젝트의 FindFolderSO 에셋에 저장되며, 위치는 자유(타입 기반 자동 탐색).",
+  "description": "자주 쓰는 프로젝트 폴더를 그룹/중첩으로 등록해 버튼 한 번으로 Project 창에서 바로가기 하는 에디터 윈도우. 패키지 내부 SO는 빈 기본값으로 유지하고 실제 설정은 ProjectSettings/FindFolder flat JSON 파일로 나눠 저장합니다.",
   "unity": "6000.2",
   "author": { "name": "ActionFit" },
   "dependencies": {}

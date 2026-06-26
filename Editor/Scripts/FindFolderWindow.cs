@@ -8,7 +8,7 @@ public class FindFolderWindow : EditorWindow
     #region Fields
 
     private const string EditorPrefsKey = "FindFolder_SettingsPath";
-    private const string DefaultSOPath = "Assets/Editor/FindFolder/FindFolderSettings.asset";
+    private const string DefaultSOPath = "Packages/com.actionfit.findfolder/Editor/FindFolderSettings.asset";
 
     private FindFolderSO _settingSO;
     private Vector2 _scrollPosition;
@@ -160,7 +160,7 @@ public class FindFolderWindow : EditorWindow
         EditorUtility.FocusProjectWindow();
     }
 
-    // SO 로드 또는 자동 생성
+    // SO 로드 후 JSON 설정 적용
     private void LoadOrCreateSO()
     {
         string savedPath = EditorPrefs.GetString(EditorPrefsKey, "");
@@ -168,7 +168,11 @@ public class FindFolderWindow : EditorWindow
         if (!string.IsNullOrEmpty(savedPath))
         {
             _settingSO = AssetDatabase.LoadAssetAtPath<FindFolderSO>(savedPath);
-            if (_settingSO != null) return;
+            if (_settingSO != null)
+            {
+                FindFolderJsonStore.LoadInto(_settingSO);
+                return;
+            }
         }
 
         // 기본 경로에서 로드 시도
@@ -176,35 +180,9 @@ public class FindFolderWindow : EditorWindow
         if (_settingSO != null)
         {
             EditorPrefs.SetString(EditorPrefsKey, DefaultSOPath);
+            FindFolderJsonStore.LoadInto(_settingSO);
             return;
         }
-
-        // 타입으로 프로젝트 전체 탐색 (에셋 위치 무관)
-        var guids = AssetDatabase.FindAssets($"t:{nameof(FindFolderSO)}");
-        if (guids.Length > 0)
-        {
-            string foundPath = AssetDatabase.GUIDToAssetPath(guids[0]);
-            _settingSO = AssetDatabase.LoadAssetAtPath<FindFolderSO>(foundPath);
-            if (_settingSO != null)
-            {
-                EditorPrefs.SetString(EditorPrefsKey, foundPath);
-                return;
-            }
-        }
-
-        // SO 자동 생성
-        _settingSO = CreateInstance<FindFolderSO>();
-
-        string directory = System.IO.Path.GetDirectoryName(DefaultSOPath);
-        if (!string.IsNullOrEmpty(directory) && !System.IO.Directory.Exists(directory))
-        {
-            System.IO.Directory.CreateDirectory(directory);
-        }
-
-        AssetDatabase.CreateAsset(_settingSO, DefaultSOPath);
-        AssetDatabase.SaveAssets();
-        EditorPrefs.SetString(EditorPrefsKey, DefaultSOPath);
-        Debug.Log($"[FindFolder] Settings asset created: {DefaultSOPath}");
     }
 
     #endregion

@@ -541,8 +541,7 @@ public class FindFolderSettingsWindow : EditorWindow
 
     private void SaveSO()
     {
-        EditorUtility.SetDirty(_settingSO);
-        AssetDatabase.SaveAssets();
+        FindFolderJsonStore.Save(_settingSO);
     }
 
     #endregion
