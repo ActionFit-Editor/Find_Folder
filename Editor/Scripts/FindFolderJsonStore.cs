@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 public static class FindFolderJsonStore
@@ -11,11 +12,14 @@ public static class FindFolderJsonStore
     #region Types
 
     [Serializable]
-    private class IndexData
+    private class RootGroupFile
     {
         public int version = 1;
-        public List<string> groupIds = new();
-        public List<string> entryIds = new();
+        public string id;
+        public string groupName;
+        public bool isExpanded = true;
+        public List<GroupData> groups = new();
+        public List<EntryData> entries = new();
     }
 
     [Serializable]
@@ -23,17 +27,15 @@ public static class FindFolderJsonStore
     {
         public string id;
         public string parentId;
-        public int order;
         public string groupName;
-        public bool isExpanded;
+        public bool isExpanded = true;
     }
 
     [Serializable]
     private class EntryData
     {
         public string id;
-        public string groupId;
-        public int order;
+        public string parentId;
         public string label;
         public string path;
     }
@@ -42,10 +44,11 @@ public static class FindFolderJsonStore
 
     #region Fields
 
-    private const string RootPath = "ProjectSettings/FindFolder";
-    private const string GroupDirectoryName = "groups";
-    private const string EntryDirectoryName = "entries";
-    private const string IndexFileName = "index.json";
+    private const string SharedPath = "Assets/_Data/FindFolder/Shared";
+    private const string LocalPath = "UserSettings/FindFolder/Local";
+
+    private static readonly HashSet<string> LoadedSharedRootIds = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly HashSet<string> LoadedLocalRootIds = new(StringComparer.OrdinalIgnoreCase);
 
     #endregion
 
@@ -55,49 +58,16 @@ public static class FindFolderJsonStore
     {
         if (settings == null) return;
 
-        string root = GetAbsolutePath(RootPath);
-        string indexPath = Path.Combine(root, IndexFileName);
-        if (!File.Exists(indexPath))
-        {
-            settings.folderGroups = new List<FindFolderSO.FolderGroup>();
-            return;
-        }
+        LoadedSharedRootIds.Clear();
+        LoadedLocalRootIds.Clear();
 
-        var index = ReadJson<IndexData>(indexPath) ?? new IndexData();
-        var groups = LoadGroupData(root, index);
-        var entries = LoadEntryData(root, index);
+        var rootGroups = new Dictionary<string, FindFolderSO.FolderGroup>(StringComparer.OrdinalIgnoreCase);
+        LoadRootDirectory(SharedPath, FindFolderSO.StorageScope.Shared, rootGroups, LoadedSharedRootIds);
+        LoadRootDirectory(LocalPath, FindFolderSO.StorageScope.Local, rootGroups, LoadedLocalRootIds);
 
-        var groupById = groups.ToDictionary(g => g.id, g => new FindFolderSO.FolderGroup
-        {
-            id = g.id,
-            groupName = g.groupName,
-            isExpanded = g.isExpanded,
-            entries = new List<FindFolderSO.FolderEntry>(),
-            subGroups = new List<FindFolderSO.FolderGroup>()
-        });
-
-        foreach (var entryData in entries.OrderBy(e => e.order))
-        {
-            if (!groupById.TryGetValue(entryData.groupId, out var group)) continue;
-            group.entries.Add(new FindFolderSO.FolderEntry
-            {
-                id = entryData.id,
-                label = entryData.label,
-                path = entryData.path
-            });
-        }
-
-        var rootGroups = new List<FindFolderSO.FolderGroup>();
-        foreach (var groupData in groups.OrderBy(g => g.order))
-        {
-            if (!groupById.TryGetValue(groupData.id, out var group)) continue;
-            if (!string.IsNullOrEmpty(groupData.parentId) && groupById.TryGetValue(groupData.parentId, out var parent))
-                parent.subGroups.Add(group);
-            else
-                rootGroups.Add(group);
-        }
-
-        settings.folderGroups = rootGroups;
+        settings.folderGroups = rootGroups.Values
+            .OrderBy(g => g.groupName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     public static void Save(FindFolderSO settings)
@@ -106,47 +76,136 @@ public static class FindFolderJsonStore
 
         EnsureIds(settings);
 
-        var index = new IndexData();
-        var groups = new List<GroupData>();
-        var entries = new List<EntryData>();
+        string sharedDirectory = GetAbsolutePath(SharedPath);
+        string localDirectory = GetAbsolutePath(LocalPath);
+        Directory.CreateDirectory(sharedDirectory);
+        Directory.CreateDirectory(localDirectory);
 
-        FlattenGroups(settings.folderGroups, "", groups, entries, index);
+        var activeSharedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var activeLocalIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        string root = GetAbsolutePath(RootPath);
-        string groupsRoot = Path.Combine(root, GroupDirectoryName);
-        string entriesRoot = Path.Combine(root, EntryDirectoryName);
-        Directory.CreateDirectory(groupsRoot);
-        Directory.CreateDirectory(entriesRoot);
+        foreach (var rootGroup in settings.folderGroups.Where(g => g != null))
+        {
+            var file = CreateRootFile(rootGroup);
+            if (rootGroup.storageScope == FindFolderSO.StorageScope.Local)
+            {
+                activeLocalIds.Add(rootGroup.id);
+                WriteJson(GetRootFilePath(LocalPath, rootGroup.id), file);
+            }
+            else
+            {
+                activeSharedIds.Add(rootGroup.id);
+                WriteJson(GetRootFilePath(SharedPath, rootGroup.id), file);
 
-        WriteJson(Path.Combine(root, IndexFileName), index);
-        WriteSplitFiles(groupsRoot, groups, g => g.id);
-        WriteSplitFiles(entriesRoot, entries, e => e.id);
+                string localOverridePath = GetRootFilePath(LocalPath, rootGroup.id);
+                if (File.Exists(localOverridePath))
+                    File.Delete(localOverridePath);
+            }
+        }
+
+        DeleteInactiveLocalFiles(activeLocalIds);
+        DeleteInactiveSharedFiles(activeSharedIds, activeLocalIds);
+        AssetDatabase.Refresh();
     }
 
     #endregion
 
     #region Private Methods
 
-    private static List<GroupData> LoadGroupData(string root, IndexData index)
+    private static void LoadRootDirectory(string projectRelativeDirectory, FindFolderSO.StorageScope scope,
+        Dictionary<string, FindFolderSO.FolderGroup> rootGroups, HashSet<string> loadedIds)
     {
-        string groupsRoot = Path.Combine(root, GroupDirectoryName);
-        return index.groupIds
-            .Select(id => ReadJson<GroupData>(Path.Combine(groupsRoot, $"{id}.json")))
-            .Where(g => g != null && !string.IsNullOrEmpty(g.id))
-            .ToList();
+        string directory = GetAbsolutePath(projectRelativeDirectory);
+        if (!Directory.Exists(directory)) return;
+
+        foreach (string path in Directory.GetFiles(directory, "*.json"))
+        {
+            var file = ReadJson<RootGroupFile>(path);
+            if (file == null || string.IsNullOrEmpty(file.id)) continue;
+
+            loadedIds.Add(file.id);
+            rootGroups[file.id] = CreateRootGroup(file, scope);
+        }
     }
 
-    private static List<EntryData> LoadEntryData(string root, IndexData index)
+    private static FindFolderSO.FolderGroup CreateRootGroup(RootGroupFile file, FindFolderSO.StorageScope scope)
     {
-        string entriesRoot = Path.Combine(root, EntryDirectoryName);
-        return index.entryIds
-            .Select(id => ReadJson<EntryData>(Path.Combine(entriesRoot, $"{id}.json")))
-            .Where(e => e != null && !string.IsNullOrEmpty(e.id))
-            .ToList();
+        var root = new FindFolderSO.FolderGroup
+        {
+            id = file.id,
+            storageScope = scope,
+            groupName = file.groupName,
+            isExpanded = file.isExpanded,
+            entries = new List<FindFolderSO.FolderEntry>(),
+            subGroups = new List<FindFolderSO.FolderGroup>()
+        };
+
+        var groupById = new Dictionary<string, FindFolderSO.FolderGroup>(StringComparer.OrdinalIgnoreCase)
+        {
+            [root.id] = root
+        };
+
+        if (file.groups == null) file.groups = new List<GroupData>();
+        if (file.entries == null) file.entries = new List<EntryData>();
+
+        foreach (var groupData in file.groups)
+        {
+            if (string.IsNullOrEmpty(groupData.id)) continue;
+            groupById[groupData.id] = new FindFolderSO.FolderGroup
+            {
+                id = groupData.id,
+                storageScope = scope,
+                groupName = groupData.groupName,
+                isExpanded = groupData.isExpanded,
+                entries = new List<FindFolderSO.FolderEntry>(),
+                subGroups = new List<FindFolderSO.FolderGroup>()
+            };
+        }
+
+        foreach (var groupData in file.groups)
+        {
+            if (!groupById.TryGetValue(groupData.id, out var group)) continue;
+            if (string.IsNullOrEmpty(groupData.parentId) || !groupById.TryGetValue(groupData.parentId, out var parent))
+                parent = root;
+
+            parent.subGroups.Add(group);
+        }
+
+        foreach (var entryData in file.entries)
+        {
+            if (string.IsNullOrEmpty(entryData.id)) continue;
+            if (string.IsNullOrEmpty(entryData.parentId) || !groupById.TryGetValue(entryData.parentId, out var parent))
+                parent = root;
+
+            parent.entries.Add(new FindFolderSO.FolderEntry
+            {
+                id = entryData.id,
+                label = entryData.label,
+                path = entryData.path
+            });
+        }
+
+        return root;
     }
 
-    private static void FlattenGroups(List<FindFolderSO.FolderGroup> source, string parentId,
-        List<GroupData> groups, List<EntryData> entries, IndexData index)
+    private static RootGroupFile CreateRootFile(FindFolderSO.FolderGroup rootGroup)
+    {
+        var file = new RootGroupFile
+        {
+            id = rootGroup.id,
+            groupName = rootGroup.groupName,
+            isExpanded = rootGroup.isExpanded,
+            groups = new List<GroupData>(),
+            entries = new List<EntryData>()
+        };
+
+        AddEntries(file.entries, rootGroup.entries, rootGroup.id);
+        FlattenChildGroups(rootGroup.subGroups, rootGroup.id, file.groups, file.entries);
+        return file;
+    }
+
+    private static void FlattenChildGroups(List<FindFolderSO.FolderGroup> source, string parentId,
+        List<GroupData> groups, List<EntryData> entries)
     {
         if (source == null) return;
 
@@ -159,32 +218,31 @@ public static class FindFolderJsonStore
             {
                 id = group.id,
                 parentId = parentId,
-                order = i,
                 groupName = group.groupName,
                 isExpanded = group.isExpanded
             });
-            index.groupIds.Add(group.id);
 
-            if (group.entries != null)
+            AddEntries(entries, group.entries, group.id);
+            FlattenChildGroups(group.subGroups, group.id, groups, entries);
+        }
+    }
+
+    private static void AddEntries(List<EntryData> target, List<FindFolderSO.FolderEntry> source, string parentId)
+    {
+        if (source == null) return;
+
+        for (int i = 0; i < source.Count; i++)
+        {
+            var entry = source[i];
+            if (entry == null) continue;
+
+            target.Add(new EntryData
             {
-                for (int j = 0; j < group.entries.Count; j++)
-                {
-                    var entry = group.entries[j];
-                    if (entry == null) continue;
-
-                    entries.Add(new EntryData
-                    {
-                        id = entry.id,
-                        groupId = group.id,
-                        order = j,
-                        label = entry.label,
-                        path = entry.path
-                    });
-                    index.entryIds.Add(entry.id);
-                }
-            }
-
-            FlattenGroups(group.subGroups, group.id, groups, entries, index);
+                id = entry.id,
+                parentId = parentId,
+                label = entry.label,
+                path = entry.path
+            });
         }
     }
 
@@ -225,19 +283,28 @@ public static class FindFolderJsonStore
         return id;
     }
 
-    private static void WriteSplitFiles<T>(string directory, List<T> values, Func<T, string> idGetter)
+    private static void DeleteInactiveLocalFiles(HashSet<string> activeLocalIds)
     {
-        var activeFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var value in values)
+        foreach (string id in LoadedLocalRootIds)
         {
-            string path = Path.Combine(directory, $"{idGetter(value)}.json");
-            activeFiles.Add(path);
-            WriteJson(path, value);
-        }
+            if (activeLocalIds.Contains(id)) continue;
 
-        foreach (string path in Directory.GetFiles(directory, "*.json"))
+            string path = GetRootFilePath(LocalPath, id);
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    private static void DeleteInactiveSharedFiles(HashSet<string> activeSharedIds, HashSet<string> activeLocalIds)
+    {
+        foreach (string id in LoadedSharedRootIds)
         {
-            if (!activeFiles.Contains(path))
+            if (activeSharedIds.Contains(id)) continue;
+            if (activeLocalIds.Contains(id)) continue;
+            if (LoadedLocalRootIds.Contains(id)) continue;
+
+            string path = GetRootFilePath(SharedPath, id);
+            if (File.Exists(path))
                 File.Delete(path);
         }
     }
@@ -261,6 +328,11 @@ public static class FindFolderJsonStore
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path));
         File.WriteAllText(path, JsonUtility.ToJson(value, true));
+    }
+
+    private static string GetRootFilePath(string projectRelativeDirectory, string id)
+    {
+        return Path.Combine(GetAbsolutePath(projectRelativeDirectory), $"{id}.json");
     }
 
     private static string GetAbsolutePath(string projectRelativePath)

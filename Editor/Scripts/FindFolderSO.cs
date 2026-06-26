@@ -7,6 +7,12 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "FindFolderSettings", menuName = "CustomEditor/FindFolder")]
 public class FindFolderSO : ScriptableObject
 {
+    public enum StorageScope
+    {
+        Shared,
+        Local
+    }
+
     [Serializable]
     public class FolderEntry
     {
@@ -19,6 +25,7 @@ public class FindFolderSO : ScriptableObject
     public class FolderGroup
     {
         [HideInInspector] public string id;
+        [HideInInspector] public StorageScope storageScope = StorageScope.Shared;
         public string groupName;            // 그룹 이름
         public bool isExpanded = true;      // 접기/펼치기 상태
         public List<FolderEntry> entries = new(); // 그룹 내 폴더 목록

@@ -7,7 +7,7 @@
 ```json
 {
   "dependencies": {
-    "com.actionfit.findfolder": "https://github.com/ActionFit-Editor/Find_Folder.git#1.0.2"
+    "com.actionfit.findfolder": "https://github.com/ActionFit-Editor/Find_Folder.git#1.0.4"
   }
 }
 ```
@@ -24,10 +24,11 @@
 
 ## 설정 저장
 
-패키지 내부의 `FindFolderSettings.asset`은 빈 기본 SO로만 유지합니다. 실제 설정은 `ProjectSettings/FindFolder/` 아래 JSON으로 저장됩니다.
+패키지 내부의 `FindFolderSettings.asset`은 빈 기본 SO로만 유지합니다. 실제 설정은 최상위 그룹별 JSON으로 저장됩니다.
 
-- `index.json`: 현재 사용 중인 group/entry id 목록.
-- `groups/{id}.json`: 그룹 이름, 부모 id, 정렬 순서, 접힘 상태.
-- `entries/{id}.json`: 버튼 라벨, 대상 경로, 소속 그룹 id, 정렬 순서.
+- Shared: `Assets/_Data/FindFolder/Shared/{rootGroupId}.json`
+- Local: `UserSettings/FindFolder/Local/{rootGroupId}.json`
 
-설정은 중첩 구조 대신 flat JSON으로 나눠 저장하므로, 협업 중 서로 다른 그룹/엔트리를 수정할 때 단일 SO 충돌을 피하기 쉽습니다.
+각 JSON은 최상위 그룹 하나를 담당하며, 내부의 하위 그룹과 엔트리는 `groups[]`, `entries[]` flat 배열로 저장합니다. 로드 시 `parentId`로 기존 중첩 그룹 구조를 복원합니다.
+
+Edit 창에서 최상위 그룹의 `Local` 토글을 켜면 해당 그룹 전체가 `UserSettings/FindFolder/Local`에 저장되어 Git 공유 대상에서 빠집니다. 토글을 끄면 `Assets/_Data/FindFolder/Shared`에 저장되어 팀 공용 설정이 됩니다.

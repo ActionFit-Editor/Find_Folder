@@ -103,7 +103,7 @@ public class FindFolderWindow : EditorWindow
             group.isExpanded = EditorGUILayout.Foldout(group.isExpanded, displayName, true, EditorStyles.foldoutHeader);
             if (EditorGUI.EndChangeCheck())
             {
-                EditorUtility.SetDirty(_settingSO);
+                FindFolderJsonStore.Save(_settingSO);
             }
 
             EditorGUILayout.EndHorizontal();

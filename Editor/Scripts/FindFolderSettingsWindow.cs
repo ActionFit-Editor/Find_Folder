@@ -145,6 +145,18 @@ public class FindFolderSettingsWindow : EditorWindow
                 SaveSO();
             }
 
+            if (depth == 0)
+            {
+                bool isLocal = group.storageScope == FindFolderSO.StorageScope.Local;
+                EditorGUI.BeginChangeCheck();
+                isLocal = GUILayout.Toggle(isLocal, "Local", EditorStyles.toolbarButton, GUILayout.Width(55));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    group.storageScope = isLocal ? FindFolderSO.StorageScope.Local : FindFolderSO.StorageScope.Shared;
+                    SaveSO();
+                }
+            }
+
             if (GUILayout.Button("+G", EditorStyles.toolbarButton, GUILayout.Width(28)))
                 AddGroup(group.subGroups);
 
