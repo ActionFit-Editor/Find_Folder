@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -225,6 +226,7 @@ public class FindFolderSettingsWindow : EditorWindow
                 SaveSO();
             }
 
+            FindFolderJsonStore.SyncEntryAssetReferences(_settingSO);
             var currentAsset = AssetDatabase.LoadAssetAtPath<Object>(entry.path);
             EditorGUI.BeginChangeCheck();
             var newAsset = EditorGUILayout.ObjectField(currentAsset, typeof(Object), false);
@@ -234,6 +236,7 @@ public class FindFolderSettingsWindow : EditorWindow
                 if (!string.IsNullOrEmpty(newPath))
                 {
                     entry.path = newPath;
+                    entry.guid = AssetDatabase.AssetPathToGUID(newPath);
                     SaveSO();
                 }
             }
@@ -539,11 +542,17 @@ public class FindFolderSettingsWindow : EditorWindow
 
     private void AddFolderEntry(FindFolderSO.FolderGroup group, string path)
     {
-        if (group.entries.Exists(e => e.path == path)) return;
+        string guid = AssetDatabase.AssetPathToGUID(path);
+        if (group.entries.Exists(e =>
+                !string.IsNullOrWhiteSpace(guid)
+                    ? string.Equals(e.guid, guid, StringComparison.Ordinal)
+                    : string.Equals(e.path, path, StringComparison.Ordinal)))
+            return;
 
         group.entries.Add(new FindFolderSO.FolderEntry
         {
             label = Path.GetFileName(path),
+            guid = guid,
             path = path
         });
 

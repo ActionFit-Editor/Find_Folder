@@ -115,9 +115,10 @@ public class FindFolderWindow : EditorWindow
             {
                 foreach (var entry in group.entries)
                 {
-                    if (string.IsNullOrEmpty(entry.path)) continue;
+                    string path = ResolveEntryPath(entry);
+                    if (string.IsNullOrEmpty(path)) continue;
 
-                    string buttonLabel = string.IsNullOrEmpty(entry.label) ? entry.path : entry.label;
+                    string buttonLabel = string.IsNullOrEmpty(entry.label) ? path : entry.label;
 
                     Rect buttonRect = EditorGUILayout.GetControlRect(false, 26);
                     float indent = (depth + 1) * 12 + 12;
@@ -126,7 +127,7 @@ public class FindFolderWindow : EditorWindow
 
                     if (GUI.Button(buttonRect, buttonLabel))
                     {
-                        NavigateToFolder(entry.path);
+                        NavigateToFolder(entry);
                     }
                 }
             }
@@ -146,8 +147,9 @@ public class FindFolderWindow : EditorWindow
     #region Private Methods
 
     // Project 탭에서 해당 폴더로 이동
-    private void NavigateToFolder(string path)
+    private void NavigateToFolder(FindFolderSO.FolderEntry entry)
     {
+        string path = ResolveEntryPath(entry, true);
         var obj = AssetDatabase.LoadAssetAtPath<Object>(path);
         if (obj == null)
         {
@@ -158,6 +160,29 @@ public class FindFolderWindow : EditorWindow
         Selection.activeObject = obj;
         EditorGUIUtility.PingObject(obj);
         EditorUtility.FocusProjectWindow();
+    }
+
+    private string ResolveEntryPath(FindFolderSO.FolderEntry entry, bool saveIfChanged = false)
+    {
+        if (entry == null) return "";
+
+        string path = entry.path;
+        if (!string.IsNullOrWhiteSpace(entry.guid))
+        {
+            string currentPath = AssetDatabase.GUIDToAssetPath(entry.guid);
+            if (!string.IsNullOrWhiteSpace(currentPath))
+            {
+                path = currentPath;
+                if (!string.Equals(entry.path, currentPath, StringComparison.Ordinal))
+                {
+                    entry.path = currentPath;
+                    if (saveIfChanged)
+                        FindFolderJsonStore.Save(_settingSO);
+                }
+            }
+        }
+
+        return path;
     }
 
     // SO 로드 후 JSON 설정 적용

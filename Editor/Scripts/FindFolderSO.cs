@@ -18,7 +18,8 @@ public class FindFolderSO : ScriptableObject
     {
         [HideInInspector] public string id;
         public string label; // 버튼에 표시할 이름
-        public string path;  // 폴더 에셋 경로
+        public string guid;  // 이동/이름 변경에도 유지되는 에셋 GUID
+        public string path;  // 사람이 읽기 위한 현재 에셋 경로 캐시
     }
 
     [Serializable]

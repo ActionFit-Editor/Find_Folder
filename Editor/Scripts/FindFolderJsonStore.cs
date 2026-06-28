@@ -14,7 +14,7 @@ public static class FindFolderJsonStore
     [Serializable]
     private class RootGroupFile
     {
-        public int version = 1;
+        public int version = 2;
         public string id;
         public string groupName;
         public bool isExpanded = true;
@@ -37,6 +37,7 @@ public static class FindFolderJsonStore
         public string id;
         public string parentId;
         public string label;
+        public string guid;
         public string path;
     }
 
@@ -68,6 +69,9 @@ public static class FindFolderJsonStore
         settings.folderGroups = rootGroups.Values
             .OrderBy(g => g.groupName, StringComparer.OrdinalIgnoreCase)
             .ToList();
+
+        if (SyncEntryAssetReferences(settings))
+            Save(settings);
     }
 
     public static void Save(FindFolderSO settings)
@@ -75,6 +79,7 @@ public static class FindFolderJsonStore
         if (settings == null) return;
 
         EnsureIds(settings);
+        SyncEntryAssetReferences(settings);
 
         string sharedDirectory = GetAbsolutePath(SharedPath);
         string localDirectory = GetAbsolutePath(LocalPath);
@@ -181,6 +186,7 @@ public static class FindFolderJsonStore
             {
                 id = entryData.id,
                 label = entryData.label,
+                guid = entryData.guid,
                 path = entryData.path
             });
         }
@@ -241,9 +247,68 @@ public static class FindFolderJsonStore
                 id = entry.id,
                 parentId = parentId,
                 label = entry.label,
+                guid = entry.guid,
                 path = entry.path
             });
         }
+    }
+
+    public static bool SyncEntryAssetReferences(FindFolderSO settings)
+    {
+        if (settings == null) return false;
+        return SyncEntryAssetReferences(settings.folderGroups);
+    }
+
+    private static bool SyncEntryAssetReferences(List<FindFolderSO.FolderGroup> groups)
+    {
+        if (groups == null) return false;
+
+        bool changed = false;
+        foreach (var group in groups)
+        {
+            if (group == null) continue;
+
+            if (group.entries != null)
+            {
+                foreach (var entry in group.entries)
+                {
+                    if (entry == null) continue;
+                    changed |= SyncEntryAssetReference(entry);
+                }
+            }
+
+            changed |= SyncEntryAssetReferences(group.subGroups);
+        }
+
+        return changed;
+    }
+
+    private static bool SyncEntryAssetReference(FindFolderSO.FolderEntry entry)
+    {
+        bool changed = false;
+
+        if (string.IsNullOrWhiteSpace(entry.guid) && !string.IsNullOrWhiteSpace(entry.path))
+        {
+            string guid = AssetDatabase.AssetPathToGUID(entry.path);
+            if (!string.IsNullOrWhiteSpace(guid))
+            {
+                entry.guid = guid;
+                changed = true;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(entry.guid))
+        {
+            string currentPath = AssetDatabase.GUIDToAssetPath(entry.guid);
+            if (!string.IsNullOrWhiteSpace(currentPath) &&
+                !string.Equals(entry.path, currentPath, StringComparison.Ordinal))
+            {
+                entry.path = currentPath;
+                changed = true;
+            }
+        }
+
+        return changed;
     }
 
     private static void EnsureIds(FindFolderSO settings)
