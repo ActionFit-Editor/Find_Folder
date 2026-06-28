@@ -7,7 +7,7 @@
 ```json
 {
   "dependencies": {
-    "com.actionfit.findfolder": "https://github.com/ActionFit-Editor/Find_Folder.git#1.0.6"
+    "com.actionfit.findfolder": "https://github.com/ActionFit-Editor/Find_Folder.git#1.0.7"
   }
 }
 ```
