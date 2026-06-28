@@ -227,9 +227,9 @@ public class FindFolderSettingsWindow : EditorWindow
             }
 
             FindFolderJsonStore.SyncEntryAssetReferences(_settingSO);
-            var currentAsset = AssetDatabase.LoadAssetAtPath<Object>(entry.path);
+            var currentAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(entry.path);
             EditorGUI.BeginChangeCheck();
-            var newAsset = EditorGUILayout.ObjectField(currentAsset, typeof(Object), false);
+            var newAsset = EditorGUILayout.ObjectField(currentAsset, typeof(UnityEngine.Object), false);
             if (EditorGUI.EndChangeCheck() && newAsset != null)
             {
                 string newPath = AssetDatabase.GetAssetPath(newAsset);

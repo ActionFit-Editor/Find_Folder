@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -150,7 +151,7 @@ public class FindFolderWindow : EditorWindow
     private void NavigateToFolder(FindFolderSO.FolderEntry entry)
     {
         string path = ResolveEntryPath(entry, true);
-        var obj = AssetDatabase.LoadAssetAtPath<Object>(path);
+        var obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
         if (obj == null)
         {
             Debug.LogWarning($"[FindFolder] Folder not found: {path}");
