@@ -7,7 +7,7 @@ This file is shipped inside the UPM package so an AI assistant in a consuming Un
 - Package ID: `com.actionfit.findfolder`
 - Display name: Find Folder
 - Repository: `https://github.com/ActionFit-Editor/Find_Folder.git`
-- Current package version at generation time: `1.0.7`
+- Current package version at generation time: `1.0.8`
 - Unity version: `6000.2`
 
 ## Purpose
@@ -49,11 +49,21 @@ Read this file when:
 
 ## Menu And Storage Notes
 
-- Main menu: `Tools/ActionFit/Find Folder`.
+- Main menu: `Tools/Package/Find Folder/Open Window`.
 - Shared group settings are stored under `Assets/_Data/FindFolder/Shared/{rootGroupId}.json`.
 - Local group settings are stored under `UserSettings/FindFolder/Local/{rootGroupId}.json`.
 - Folder and file focus entries should prefer GUID-based identity so moved assets can still be found.
+- Clicking a folder entry should open that folder's contents in the Unity Project Browser; file entries should keep the existing select-and-ping behavior.
 - When migrating older entries, use the stored path only to discover and backfill the GUID.
+
+## Package Tools Menu
+
+- Unity menu root: `Tools/Package/Find Folder/`.
+- Keep package commands under this package root.
+- Lower separated entries:
+- `Setting SO`: focuses this package's settings ScriptableObject.
+- `README`: opens this package README.
+- Do not add README or Setting SO access back to Custom Package Manager package rows or Project Files.
 
 ## Release Note Rules
 

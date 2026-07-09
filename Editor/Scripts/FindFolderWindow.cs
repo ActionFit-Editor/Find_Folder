@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 
 using System;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,7 +19,7 @@ public class FindFolderWindow : EditorWindow
 
     #region Window
 
-    [MenuItem("Tools/ActionFit/Find Folder", false, 20)]
+    [MenuItem("Tools/Package/Find Folder/Open Window", false, 20)]
     public static void ShowWindow()
     {
         var window = GetWindow<FindFolderWindow>("Find Folder");
@@ -128,7 +129,7 @@ public class FindFolderWindow : EditorWindow
 
                     if (GUI.Button(buttonRect, buttonLabel))
                     {
-                        NavigateToFolder(entry);
+                        NavigateToEntry(entry);
                     }
                 }
             }
@@ -147,20 +148,55 @@ public class FindFolderWindow : EditorWindow
 
     #region Private Methods
 
-    // Project 탭에서 해당 폴더로 이동
-    private void NavigateToFolder(FindFolderSO.FolderEntry entry)
+    // Project 창에서 해당 엔트리로 이동하고, 폴더는 내부 콘텐츠를 엽니다.
+    private void NavigateToEntry(FindFolderSO.FolderEntry entry)
     {
         string path = ResolveEntryPath(entry, true);
         var obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
         if (obj == null)
         {
-            Debug.LogWarning($"[FindFolder] Folder not found: {path}");
+            UnityEngine.Debug.LogWarning($"[FindFolder] Asset not found: {path}");
             return;
         }
 
         Selection.activeObject = obj;
-        EditorGUIUtility.PingObject(obj);
         EditorUtility.FocusProjectWindow();
+
+        if (AssetDatabase.IsValidFolder(path) && TryShowFolderContents(obj))
+            return;
+
+        EditorGUIUtility.PingObject(obj);
+    }
+
+    // Unity Project Browser에서 폴더 내부 콘텐츠를 표시합니다.
+    private static bool TryShowFolderContents(UnityEngine.Object folderObject)
+    {
+        Type projectBrowserType = typeof(Editor).Assembly.GetType("UnityEditor.ProjectBrowser");
+        if (projectBrowserType == null) return false;
+
+        EditorWindow projectBrowser = EditorWindow.GetWindow(projectBrowserType);
+        if (projectBrowser == null) return false;
+
+        MethodInfo showFolderContents = projectBrowserType.GetMethod(
+            "ShowFolderContents",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            null,
+            new[] { typeof(int), typeof(bool) },
+            null);
+
+        if (showFolderContents == null) return false;
+
+        try
+        {
+            showFolderContents.Invoke(projectBrowser, new object[] { folderObject.GetInstanceID(), true });
+            projectBrowser.Repaint();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            UnityEngine.Debug.LogWarning($"[FindFolder] Failed to open folder contents: {exception.Message}");
+            return false;
+        }
     }
 
     private string ResolveEntryPath(FindFolderSO.FolderEntry entry, bool saveIfChanged = false)

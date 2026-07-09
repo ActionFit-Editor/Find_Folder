@@ -7,15 +7,17 @@
 ```json
 {
   "dependencies": {
-    "com.actionfit.findfolder": "https://github.com/ActionFit-Editor/Find_Folder.git#1.0.7"
+    "com.actionfit.findfolder": "https://github.com/ActionFit-Editor/Find_Folder.git#1.0.8"
   }
 }
 ```
 
 ## Menu
 
-- `Tools > ActionFit > Find Folder`: 등록된 바로가기 버튼을 표시합니다.
+- `Tools > Package > Find Folder > Open Window`: 등록된 바로가기 버튼을 표시합니다.
 - `Edit`: 그룹, 하위 그룹, 폴더/파일 항목을 편집합니다.
+
+폴더 항목 버튼은 Unity Project 창에서 해당 폴더 내부 콘텐츠를 열고, 파일 항목은 기존처럼 선택 후 Ping합니다.
 
 ## Storage
 
@@ -39,3 +41,10 @@ JSON은 최상위 그룹 기준으로 저장되며, 중첩 그룹과 항목은 `
 - `FindFolderWindow`에 `System` namespace를 추가해 `StringComparison.Ordinal` 컴파일 오류를 수정했습니다.
 - `FindFolderWindow`와 `FindFolderSettingsWindow`의 `Object` 참조를 `UnityEngine.Object`로 명시해 `object`와의 타입 모호성 컴파일 오류를 수정했습니다.
 - README와 package metadata의 깨진 한글을 복구하고, GUID 기반 저장/마이그레이션 동작을 문서화했습니다.
+
+## Unity Menu
+
+- Package root: `Tools > Package > Find Folder`.
+- README: `Tools > Package > Find Folder > README`.
+- Setting SO: `Tools > Package > Find Folder > Setting SO`.
+- Package commands stay under the same package root and appear above the separated README/Setting SO entries when those entries exist.
