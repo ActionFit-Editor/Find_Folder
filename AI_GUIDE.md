@@ -7,12 +7,19 @@ This file is shipped inside the UPM package so an AI assistant in a consuming Un
 - Package ID: `com.actionfit.findfolder`
 - Display name: Find Folder
 - Repository: `https://github.com/ActionFit-Editor/Find_Folder.git`
-- Current package version at generation time: `1.0.8`
+- Current package version at generation time: `1.0.9`
 - Unity version: `6000.2`
 
 ## Purpose
 
 Find Folder manages saved folder/file focus shortcuts. Use `README.md`, `package.json`, package source files, and `Editor/PackageInfo/ActionFitPackageInfo_SO.asset` together to understand the user-facing workflow and catalog metadata.
+
+## Agent Skills
+
+- `Skills~/manifest.json` registers schema v2 `find-folder-help` for Codex and Claude with the unique `find-folder` prefix.
+- The help skill is read-only and reads the generated `PACKAGE_SKILLS.md` inventory before explaining package workflows.
+- No skill changes saved targets, Shared/Local JSON, GUIDs, settings, or Project window selection.
+- Custom Package Manager owns project-local installation and safe refresh of this package's skill.
 
 ## Project Router Registration
 

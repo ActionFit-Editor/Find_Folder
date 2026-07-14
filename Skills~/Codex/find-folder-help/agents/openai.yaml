@@ -1,0 +1,4 @@
+interface:
+  display_name: "Find Folder Help"
+  short_description: "Explain saved target workflows without changing settings"
+  default_prompt: "Use $find-folder-help to explain Find Folder storage, menus, and saved-target safety boundaries."

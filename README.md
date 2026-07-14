@@ -7,7 +7,7 @@
 ```json
 {
   "dependencies": {
-    "com.actionfit.findfolder": "https://github.com/ActionFit-Editor/Find_Folder.git#1.0.8"
+    "com.actionfit.findfolder": "https://github.com/ActionFit-Editor/Find_Folder.git#1.0.9"
   }
 }
 ```
@@ -41,6 +41,14 @@ JSON은 최상위 그룹 기준으로 저장되며, 중첩 그룹과 항목은 `
 - `FindFolderWindow`에 `System` namespace를 추가해 `StringComparison.Ordinal` 컴파일 오류를 수정했습니다.
 - `FindFolderWindow`와 `FindFolderSettingsWindow`의 `Object` 참조를 `UnityEngine.Object`로 명시해 `object`와의 타입 모호성 컴파일 오류를 수정했습니다.
 - README와 package metadata의 깨진 한글을 복구하고, GUID 기반 저장/마이그레이션 동작을 문서화했습니다.
+
+## Agent Skills
+
+After installing or updating the package, run `Tools > Package > Custom Package Manager > Install or Refresh Agent Skills`.
+
+- `$find-folder-help`: explains saved groups, Shared/Local storage, GUID migration, focus behavior, menus, and safety boundaries.
+
+This package intentionally registers help only. The skill does not add, edit, migrate, or remove saved targets; write JSON; change GUIDs; or focus Project assets.
 
 ## Unity Menu
 

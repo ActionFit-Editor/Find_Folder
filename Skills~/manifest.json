@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 2,
+  "skillPrefix": "find-folder",
+  "helpSkill": "find-folder-help",
+  "skills": [
+    {
+      "name": "find-folder-help",
+      "agents": ["codex", "claude"],
+      "includeShared": false,
+      "access": "read-only"
+    }
+  ]
+}
