@@ -7,7 +7,7 @@ This file is shipped inside the UPM package so an AI assistant in a consuming Un
 - Package ID: `com.actionfit.findfolder`
 - Display name: Find Folder
 - Repository: `https://github.com/ActionFit-Editor/Find_Folder.git`
-- Current package version at generation time: `1.0.9`
+- Current package version at generation time: `1.0.10`
 - Unity version: `6000.2`
 
 ## Purpose

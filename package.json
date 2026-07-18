@@ -1,6 +1,6 @@
 {
     "name":  "com.actionfit.findfolder",
-    "version":  "1.0.9",
+    "version":  "1.0.10",
     "displayName":  "Find Folder",
     "description":  "자주 쓰는 프로젝트 폴더를 그룹/중첩으로 등록해 버튼 한 번으로 Project 창에서 바로가기 하는 에디터 윈도우. 설정은 Shared/Local JSON 파일로 저장됩니다.",
     "unity":  "6000.2",
