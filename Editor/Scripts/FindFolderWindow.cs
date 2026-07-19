@@ -2,6 +2,7 @@
 
 using System;
 using System.Reflection;
+using ActionFit.SOSingleton.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,7 +11,6 @@ public class FindFolderWindow : EditorWindow
     #region Fields
 
     private const string EditorPrefsKey = "FindFolder_SettingsPath";
-    private const string DefaultSOPath = "Packages/com.actionfit.findfolder/Editor/FindFolderSettings.asset";
 
     private FindFolderSO _settingSO;
     private Vector2 _scrollPosition;
@@ -225,25 +225,11 @@ public class FindFolderWindow : EditorWindow
     // SO 로드 후 JSON 설정 적용
     private void LoadOrCreateSO()
     {
-        string savedPath = EditorPrefs.GetString(EditorPrefsKey, "");
-
-        if (!string.IsNullOrEmpty(savedPath))
-        {
-            _settingSO = AssetDatabase.LoadAssetAtPath<FindFolderSO>(savedPath);
-            if (_settingSO != null)
-            {
-                FindFolderJsonStore.LoadInto(_settingSO);
-                return;
-            }
-        }
-
-        // 기본 경로에서 로드 시도
-        _settingSO = AssetDatabase.LoadAssetAtPath<FindFolderSO>(DefaultSOPath);
+        _settingSO = ActionFitSettingsAssetProvider.GetOrCreate<FindFolderSO>();
         if (_settingSO != null)
         {
-            EditorPrefs.SetString(EditorPrefsKey, DefaultSOPath);
+            EditorPrefs.SetString(EditorPrefsKey, AssetDatabase.GetAssetPath(_settingSO));
             FindFolderJsonStore.LoadInto(_settingSO);
-            return;
         }
     }
 

@@ -2,12 +2,16 @@
 
 자주 쓰는 프로젝트 폴더나 파일을 그룹/중첩 구조로 등록하고, 버튼 한 번으로 Unity Project 창에서 바로 선택할 수 있게 해주는 에디터 윈도우입니다.
 
+## 설정 SO 수명주기
+
+`FindFolderSO`는 `Assets/_Data/_FindFolder/FindFolderSO.asset`에 생성되는 Editor 전용 설정입니다. 처음 생성할 때 패키지 기본값과 같은 빈 그룹 구조로 초기화한 뒤 기존 Shared/Local JSON을 같은 순서로 적용합니다. 기존 SO와 JSON, GUID migration 규칙은 변경하지 않습니다.
+
 ## 설치
 
 ```json
 {
   "dependencies": {
-    "com.actionfit.findfolder": "https://github.com/ActionFit-Editor/Find_Folder.git#1.0.10"
+    "com.actionfit.findfolder": "https://github.com/ActionFit-Editor/Find_Folder.git#1.0.11"
   }
 }
 ```

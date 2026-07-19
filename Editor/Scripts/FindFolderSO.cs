@@ -2,10 +2,12 @@
 
 using System;
 using System.Collections.Generic;
+using ActionFit.SOSingleton;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "FindFolderSettings", menuName = "CustomEditor/FindFolder")]
-public class FindFolderSO : ScriptableObject
+[ActionFitSettingsAsset("FindFolder", ActionFitSettingsAssetLifetime.EditorOnly)]
+public class FindFolderSO : ScriptableObject, IActionFitSettingsAssetInitializer
 {
     public enum StorageScope
     {
@@ -34,6 +36,11 @@ public class FindFolderSO : ScriptableObject
     }
 
     public List<FolderGroup> folderGroups = new(); // 등록된 그룹 목록
+
+    public void InitializeNewSettingsAsset()
+    {
+        folderGroups ??= new List<FolderGroup>();
+    }
 }
 
 #endif

@@ -7,10 +7,16 @@ This file is shipped inside the UPM package so an AI assistant in a consuming Un
 - Package ID: `com.actionfit.findfolder`
 - Display name: Find Folder
 - Repository: `https://github.com/ActionFit-Editor/Find_Folder.git`
-- Current package version at generation time: `1.0.10`
+- Current package version at generation time: `1.0.11`
 - Unity version: `6000.2`
 
 ## Purpose
+
+### Settings SO Lifecycle
+
+- `FindFolderSO` is registered as `EditorOnly` with canonical path `Assets/_Data/_FindFolder/FindFolderSO.asset`.
+- A new project asset initializes the same empty group shape as the package default before the existing Shared/Local JSON layers load. Existing assets and JSON data remain authoritative.
+- Settings asset resolution is cached; the Shared/Local JSON storage paths and GUID migration contract are unchanged.
 
 Find Folder manages saved folder/file focus shortcuts. Use `README.md`, `package.json`, package source files, and `Editor/PackageInfo/ActionFitPackageInfo_SO.asset` together to understand the user-facing workflow and catalog metadata.
 

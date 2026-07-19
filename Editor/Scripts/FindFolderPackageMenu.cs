@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using ActionFit.SOSingleton.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,7 +12,8 @@ public static class FindFolderPackageMenu
     private const int ReadmePriority = 901;
 
     [MenuItem(MenuRoot + "Setting SO", false, SettingPriority)]
-    private static void FocusSettingSo() => FocusObject(AssetDatabase.LoadAssetAtPath<FindFolderSO>("Packages/com.actionfit.findfolder/Editor/FindFolderSettings.asset"), PackageId);
+    private static void FocusSettingSo() =>
+        FocusObject(ActionFitSettingsAssetProvider.GetOrCreate<FindFolderSO>(), PackageId);
 
     [MenuItem(MenuRoot + "README", false, ReadmePriority)]
     private static void OpenReadme()
